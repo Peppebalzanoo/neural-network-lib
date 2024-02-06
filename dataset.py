@@ -6,8 +6,8 @@ def load_dataset():
     test_set = np.loadtxt('./MNIST_DATASET/mnist_test.csv', delimiter=",")
 
     # Normalization Data
-    training_set_normalized = training_set[:, 1:] * (1/255)
-    test_set_normalized = test_set[:, 1:] * (1/255)
+    training_set_normalized = (training_set[:, 1:]) / 255
+    test_set_normalized = (test_set[:, 1:]) / 255
 
     # Extraction Lables
     training_labels = training_set[:, 0]
@@ -34,9 +34,8 @@ def my_one_hot_encoding(labels_set):
 
     for i in range(0, count):
         curr_class = int(labels_set[i])
-        # Array with size = 10
         curr_one_hot = np.zeros(10)
-        # Array with size = 10 and one element = 1
         curr_one_hot[curr_class] = 1
         list_of_one_hot_labels[i] = curr_one_hot
+
     return list_of_one_hot_labels

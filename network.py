@@ -9,16 +9,16 @@ def create_new_network(input_number, list_numbers_of_hidden, output_number):
 
     prev_number = input_number
     for curr_number in list_numbers_of_hidden:
-        # Generate curr_number baias for curr_number neurons
+        # Generate baiases for curr_number neurons
         baiases_list.append(sigma * np.random.normal(size=[curr_number, 1]))
-        # Generate curr_number weights for curr_number neurons
+        # Generate weights for curr_number neurons
         weights_list.append(sigma * np.random.normal(size=[curr_number, prev_number]))
         activations_fun_list.append(actfun.numpy_tanh)
 
     # For the output layer
-    # Generate number_output baias for number_output neurons
+    # Generate baiases for number_output neurons
     baiases_list.append(sigma * np.random.normal(size=[output_number, 1]))
-    # Generate number_output weights for number_output neurons
+    # Generate weights for number_output neurons
     weights_list.append(sigma * np.random.normal(size=[output_number, prev_number]))
     activations_fun_list.append(actfun.identity)
 
