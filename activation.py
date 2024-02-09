@@ -1,15 +1,15 @@
 import numpy as np
 
 
-def identity(x, der=0):
+def identity(A_layer, der=0):
     if der == 0:
-        return x
+        return A_layer
     else:
         return 1
 
 
-def numpy_tanh(x, der=0):
-    tanh_result = np.tanh(x)
+def numpy_tanh(A_layer, der=0):
+    tanh_result = np.tanh(A_layer)
     if der == 0:
         return tanh_result
     else:

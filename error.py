@@ -1,15 +1,19 @@
 import numpy as np
 
 
-def soft_max(y):
-    y_exp = np.exp(y - y.max(0))
-    z = y_exp / sum(y_exp, 0)
+def soft_max(Z):
+    # Z - Z.max(0) for avoid overflow
+    Y_exp = np.exp(Z - Z.max(0))
+    # Y_exp is a matrix of e^z
+    z = Y_exp / sum(Y_exp, 0)  # soft-max formula
     return z
 
 
-def cross_entropy(y, t, der=0):
-    z = soft_max(y) + 1e-10  # smoothing
+def cross_entropy(Z_out, Y_gold, der=0):
+    # Z is a matrix with probability
+    Z = soft_max(Z_out) + 1e-10  # smoothing
     if der == 0:
-        return -(t * np.log(z)).sum()
+        return -(Y_gold * np.log(Z)).sum()
     else:
-        return z - t
+        # Derivative of error function respect weights
+        return Z - Y_gold

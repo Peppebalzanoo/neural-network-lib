@@ -47,64 +47,72 @@ def get_network_information(net):
     print("Activation shape: ", [(net["ActFun"][i]).__name__ for i in range(0, net["Depth"])])
 
 
-def get_accuracy_network(prediction_labels_set, gold_labels_set):
-    total_cases = gold_labels_set.shape[1]
+def get_accuracy_network(Z_out, Y_gold):
+    total_cases = Y_gold.shape[1]
     good_cases = 0
-    for i in range(0, gold_labels_set.shape[1]):
-        gold_label = np.argmax(gold_labels_set[:, i])
-        my_prediction_label = np.argmax(prediction_labels_set[:, i])
+    for i in range(0, Y_gold.shape[1]):
+        gold_label = np.argmax(Y_gold[:, i])
+        my_prediction_label = np.argmax(Z_out[:, i])
         if gold_label == my_prediction_label:
             good_cases += 1
     return good_cases / total_cases
 
 
-def forward_propagation(net, train_set):
+def forward_propagation(net, X_train):
     depth = net["Depth"]
-    Z_layer = train_set
+    Z_layer = X_train
     for layer in range(0, depth):
         W = net["W"][layer]
         B = net["B"][layer]
+        # Computation of layer
         A_layer = np.matmul(W, Z_layer) + B
         g = net["ActFun"][layer]
-        # update Z: g(A_layer)
+        # Output of layer: g(A_layer)
         Z_layer = g(A_layer)
     return Z_layer
 
 
-def forward_propagation_training(net, train_set):
+def forward_propagation_training(net, X_train):
     depth = net["Depth"]
 
     Z_derived_list = []
-    Z_list = [train_set]
+    # Initialize Z_list with input
+    Z_list = [X_train]
 
     for layer in range(0, depth):
         W = net["W"][layer]
         B = net["B"][layer]
         g = net["ActFun"][layer]
-
+        # Computation of layer
         A_layer = np.matmul(W, Z_list[layer]) + B
-        # Append and update Z
+        # Output of layer: g(A_layer) and append
         Z_list.append(g(A_layer))
         Z_derived_list.append(g(A_layer, 1))
 
     return Z_list, Z_derived_list
 
 
-def backpropagation(net, train_set, gold_labels_set, error_function):
-    # * STEP 1 : FORWORD STEP
-    Z_list, Z_derived_list = forward_propagation_training(net, train_set)
+def gradient_descent_training(net, der_partial_list, eta):
+    for layer in range(0, net["Depth"]):
+        net["W"][layer] = net["W"][layer] - (eta * der_partial_list[layer])
+
+
+def backpropagation(net, X_train, Y_gold, error_function):
+    # * STEP 1 : FORWARD-STEP * #
+    # Z_list have depth + 1 elements (include Z_input)
+    # Z_derived_list have depth elements
+    Z_list, Z_derived_list = forward_propagation_training(net, X_train)
 
     # print("len(z_list): ", len(Z_list))
     # print("len(Z_derived_list): ", len(Z_derived_list))
     # print("len(net[W]): ", len(net["W"]))
 
-    # * STEP_2: COMPUTE DELTA VALUES AND BACK PROPAGATE THEM
+    # * STEP 2: COMPUTE DELTA-VALUES AND BACK-PROPAGATE THEM * #
     delta_values_list = []
-
     for i in range(net["Depth"], 0, -1):
         if i == net["Depth"]:
             # Compute delta-k for k-neurons of output
-            der_error_function = error_function(Z_list[i], gold_labels_set, 1)
+            der_error_function = error_function(Z_list[i], Y_gold, 1)
             delta_k = der_error_function * Z_derived_list[i - 1]
             delta_values_list.insert(0, delta_k)
 
@@ -116,7 +124,7 @@ def backpropagation(net, train_set, gold_labels_set, error_function):
             delta_h = (np.matmul(W.transpose(), delta_values_list[0])) * Z_derived_list[i - 1]
             delta_values_list.insert(0, delta_h)
 
-    # * STEP 3: COMPUTE ALL PARTIAL DERIVATE
+    # * STEP 3: COMPUTE ALL PARTIAL DERIVATE (LOCAL ROW) * #
     der_partial_list = []
     for i in range(0, net["Depth"]):
         local_row = np.matmul(delta_values_list[i], Z_list[i].transpose())
@@ -125,23 +133,23 @@ def backpropagation(net, train_set, gold_labels_set, error_function):
     return der_partial_list
 
 
-def back_propagation_training(net, train_set, train_labels, error_fun, epoche_number=0, eta=0.1):
-    Z_train = forward_propagation(net, train_set)
-    err_train = error_fun(Z_train, train_labels)
+def training_net(net, X_train, Y_train, error_function, epoche_number=0, eta=0.1):
+    Z_train = forward_propagation(net, X_train)
+    err_train = error_function(Z_train, Y_train)
 
     # Z_test = forward_propagation(net, val_set)
     # error_val = error_fun(Z_test, val_labels)
 
-    print("Epoca: ", 0, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, train_labels))
-    epoca = 0
-    while epoca < epoche_number:
-        der_partial_list = backpropagation(net, train_set, train_labels, error_fun)
-        # Gradient Descent: Update Weights
-        for layer in range(0, net["Depth"]):
-            net["W"][layer] = net["W"][layer] - (eta * der_partial_list[layer])
+    print("Epoca: ", 0, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train))
+    epoca = 1
+    while epoca <= epoche_number:
+        der_partial_list = backpropagation(net, X_train, Y_train, error_function)
 
-        Z_train = forward_propagation(net, train_set)
-        err_train = error_fun(Z_train, train_labels)
-        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, train_labels))
+        # * STEP 4: GRADIENT DESCENT (UPDATE WEIGHTS) * #
+        gradient_descent_training(net, der_partial_list, eta)
+
+        Z_train = forward_propagation(net, X_train)
+        err_train = error_function(Z_train, Y_train)
+        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train))
 
         epoca += 1
