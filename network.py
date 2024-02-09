@@ -133,14 +133,13 @@ def backpropagation(net, X_train, Y_gold, error_function):
     return der_partial_list
 
 
-def training_net(net, X_train, Y_train, error_function, epoche_number=0, eta=0.1):
+def training_net(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta=0.1):
     Z_train = forward_propagation(net, X_train)
     err_train = error_function(Z_train, Y_train)
+    Z_val = forward_propagation(net, X_val)
+    error_val = error_function(Z_val, Y_val)
+    print("Epoca: ", 0, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
 
-    # Z_test = forward_propagation(net, val_set)
-    # error_val = error_fun(Z_test, val_labels)
-
-    print("Epoca: ", 0, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train))
     epoca = 1
     while epoca <= epoche_number:
         der_partial_list = backpropagation(net, X_train, Y_train, error_function)
@@ -150,6 +149,10 @@ def training_net(net, X_train, Y_train, error_function, epoche_number=0, eta=0.1
 
         Z_train = forward_propagation(net, X_train)
         err_train = error_function(Z_train, Y_train)
-        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train))
+
+        Z_val = forward_propagation(net, X_val)
+        error_val = error_function(Z_val, Y_val)
+
+        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
 
         epoca += 1
