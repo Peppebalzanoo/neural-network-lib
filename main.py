@@ -21,7 +21,7 @@ def run():
     X_val = training_set[:, idx_val]
     Y_val = training_labels[:, idx_val]
 
-    net.training_net(mynet, X_train, Y_train, X_val, Y_val, err.cross_entropy, 300, 0.00001)
+    net.resilient_train(mynet, X_train, Y_train, X_val, Y_val, err.cross_entropy, 300, 0.00001)
 
 
 if __name__ == '__main__':

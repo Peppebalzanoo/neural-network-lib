@@ -156,3 +156,58 @@ def training_net(net, X_train, Y_train, X_val, Y_val, error_function, epoche_num
         print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
 
         epoca += 1
+
+
+
+def resilient_train(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta=0.00001):
+    Z_train = forward_propagation(net, X_train)
+    err_train = error_function(Z_train, Y_train)
+    Z_val = forward_propagation(net, X_val)
+    error_val = error_function(Z_val, Y_val)
+    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
+
+    eta_plus = 1.2
+    eta_minus = 0.5
+    delta_zero = 0.5
+
+    delta_min = 0.1
+    delta_max = 1
+
+    der_list = []
+    delta_ij = []
+    for e in range(0, epoche_number):
+        temp_list = [delta_zero] * net["Depth"]
+        delta_ij.append(temp_list)
+
+    epoca = 0
+    while epoca < epoche_number:
+        der_list.append(backpropagation(net, X_train, Y_train, error_function))
+        for layer in range(0, net["Depth"]):
+            if epoca > 1: # if epoca >= 2
+                prev_prev_derivatives = der_list[epoca - 2][layer]
+                prev_derivatives = der_list[epoca - 1][layer]
+                prod_der = prev_prev_derivatives * prev_derivatives
+                if np.sign(np.sum(prod_der)) > 0:
+                    # print("> 0")
+                    delta_ij[epoca - 1][layer] = min(delta_ij[epoca - 2][layer] * eta_plus, delta_max)
+                    der_list[epoca - 1][layer] = - np.prod(np.sign(prev_derivatives)) * delta_ij[epoca - 1][layer]
+                    net["W"][layer] = net["W"][layer] + der_list[epoca - 1][layer]
+                elif np.sign(np.sum(prod_der)) < 0:
+                    # print("< 0")
+                    delta_ij[epoca - 1][layer] = max(delta_ij[epoca - 2][layer] * eta_minus, delta_min)
+                    net["W"][layer] = net["W"][layer] - der_list[epoca - 2][layer]
+                    # der_list[epoca - 1][layer] = 0
+                else:
+                    # print("= 0")
+                    der_list[epoca - 1][layer] = - np.prod(np.sign(prev_derivatives)) * delta_ij[epoca - 1][layer]
+                    net["W"][layer] = net["W"][layer] + der_list[epoca - 1][layer]
+
+        Z_train = forward_propagation(net, X_train)
+        err_train = error_function(Z_train, Y_train)
+
+        Z_val = forward_propagation(net, X_val)
+        error_val = error_function(Z_val, Y_val)
+
+        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
+
+        epoca += 1
