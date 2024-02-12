@@ -25,10 +25,11 @@ def run():
     mynet3 = net.copy_network(mynet1)
     mynet4 = net.copy_network(mynet1)
 
-    net.backpropagation_train(mynet1, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    net.resilient_train_rpropprof(mynet2, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    net.resilient_train_rpropminus(mynet3, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    net.resilient_train_rpropplus(mynet4, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    # net.backpropagation_train(mynet1, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    # net.resilient_train_rpropprof(mynet2, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    # net.resilient_train_rpropminus(mynet3, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    net.resilient_train_rpropminus_2(mynet4, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    # net.resilient_train_rpropplus(mynet5, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
 
 
 if __name__ == '__main__':
