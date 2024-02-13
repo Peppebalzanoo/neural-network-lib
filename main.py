@@ -12,7 +12,7 @@ def run():
 
     input_number_neurons = training_set.shape[0]
     output_number_neurons = training_labels.shape[0]
-    mynet1 = net.create_network(input_number_neurons, [50], output_number_neurons)
+    mynet1 = net.create_network(input_number_neurons, [25], output_number_neurons)
     net.get_network_information(mynet1)
 
     idx_train, idx_val = ds.split_training_dataset(training_set, training_labels, 10)
@@ -21,13 +21,11 @@ def run():
     X_val = training_set[:, idx_val]
     Y_val = training_labels[:, idx_val]
 
+    mynet2 = net.copy_network(mynet1)
 
-
-    # net.backpropagation_train(mynet1, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    # net.resilient_train_rpropprof(mynet2, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    # net.resilient_train_rpropminus(mynet3, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
     net.resilient_train_rpropminus(mynet1, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
-    # net.resilient_train_rpropplus(mynet5, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
+    print("\n")
+    net.resilient_train_rpropplus(mynet2, X_train, Y_train, X_val, Y_val, err.cross_entropy, 50, 0.00001)
 
 
 if __name__ == '__main__':
