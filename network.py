@@ -1,13 +1,16 @@
 import numpy as np
+
+import activation
 import activation as actfun
 import copy as cp
 
 
-def create_network(input_number, list_numbers_of_hidden, output_number):
-    sigma = 0.001
+def create_network(input_number, list_numbers_of_hidden, output_number, sigma=0.001, activation_defualt=activation.tanh, list_function=None):
     weights_list = []
     baiases_list = []
-    activations_fun_list = []
+
+    if np.isscalar(list_numbers_of_hidden):
+        list_numbers_of_hidden = [list_numbers_of_hidden]
 
     prev_connections_number = input_number
     for curr_hidden_number in list_numbers_of_hidden:
@@ -15,9 +18,9 @@ def create_network(input_number, list_numbers_of_hidden, output_number):
         baiases_list.append(sigma * np.random.normal(size=[curr_hidden_number, 1]))
         # Generate weights matrix for curr_number neurons
         weights_list.append(sigma * np.random.normal(size=[curr_hidden_number, prev_connections_number]))
-        activations_fun_list.append(actfun.numpy_tanh)
         # update prev_conncetion_number
         prev_connections_number = curr_hidden_number
+    activations_fun_list = set_activation_functions(len(weights_list), activation_defualt, list_function)
 
     # For the output layer
     baiases_list.append(sigma * np.random.normal(size=[output_number, 1]))
@@ -45,6 +48,22 @@ def get_network_information(net):
     print("Number of output neurons:", net["W"][(net["Depth"] - 1)].shape[0])
     print("Weights shape: ", [net["W"][i].shape for i in range(0, (input_layer_number + hidden_layers_numbers + output_layer_number) - 1)])
     print("Activation shape: ", [(net["ActFun"][i]).__name__ for i in range(0, net["Depth"])])
+
+
+def set_activation_functions(net_depth, activation_default, list_functions):
+    # Set activation defaul for all layer
+    if list_functions is None or len(list_functions) == 0:
+        return [activation_default for _ in range(0, net_depth)]
+    # Set one activation function for all layers without last one
+    elif len(list_functions) == 1:
+        return [list_functions[0] for _ in range(0, net_depth)]
+    # Set specific activation for layers and activation defualt for all others layers without last one
+    elif len(list_functions) < net_depth:
+        ret1 = [list_functions[layer] for layer in range(0, len(list_functions))]
+        ret2 = [activation_default for _ in range(len(list_functions), net_depth)]
+        return ret1 + ret2
+    else:
+        raise Exception("Illegal number of arguments: set_activation_function")
 
 
 def get_accuracy_network(Z_out, Y_gold):
@@ -133,7 +152,8 @@ def backpropagation_train(net, X_train, Y_train, X_val, Y_val, error_function, e
     err_train = error_function(Z_train, Y_train)
     Z_val = forward_propagation(net, X_val)
     error_val = error_function(Z_val, Y_val)
-    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
+    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
+          get_accuracy_network(Z_val, Y_val))
 
     epoca = 0
     while epoca < epoche_number:
@@ -155,19 +175,13 @@ def backpropagation_train(net, X_train, Y_train, X_val, Y_val, error_function, e
         epoca += 1
 
 
-
-def resilient_train_rpropminus(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta=0.00001):
+def resilient_train_rpropminus(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta_minus=0.5, eta_plus=1.2, delta_zero=0.0125, delta_min=0.00001, delta_max=1):
     Z_train = forward_propagation(net, X_train)
     err_train = error_function(Z_train, Y_train)
     Z_val = forward_propagation(net, X_val)
     error_val = error_function(Z_val, Y_val)
-    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
-
-    eta_plus = 1.2
-    eta_minus = 0.5
-    delta_zero = 0.0125
-    delta_min = 0.00001
-    delta_max = 1
+    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
+          get_accuracy_network(Z_val, Y_val))
 
     der_list = []
     delta_ij = []
@@ -187,9 +201,8 @@ def resilient_train_rpropminus(net, X_train, Y_train, X_val, Y_val, error_functi
                 prod_der = prev_derivatives * curr_derivatives
 
                 # new list of matrix with element calculated
-                delta_ij[epoca][layer] = np.where(prod_der > 0, np.minimum(delta_ij[epoca-1][layer] * eta_plus, delta_max),
-                                            np.where(prod_der < 0, np.maximum(delta_ij[epoca-1][layer] * eta_minus, delta_min),
-                                                delta_ij[epoca-1][layer]))
+                delta_ij[epoca][layer] = np.where(prod_der > 0, np.minimum(delta_ij[epoca - 1][layer] * eta_plus, delta_max),
+                                                  np.where(prod_der < 0, np.maximum(delta_ij[epoca - 1][layer] * eta_minus, delta_min), delta_ij[epoca - 1][layer]))
 
                 net["W"][layer] = net["W"][layer] - (np.sign(der_list[epoca][layer]) * delta_ij[epoca][layer])
 
@@ -199,23 +212,19 @@ def resilient_train_rpropminus(net, X_train, Y_train, X_val, Y_val, error_functi
         Z_val = forward_propagation(net, X_val)
         error_val = error_function(Z_val, Y_val)
 
-        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
+        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
+              get_accuracy_network(Z_val, Y_val))
 
         epoca += 1
 
 
-def resilient_train_rpropplus(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta=0.00001):
+def resilient_train_rpropplus(net, X_train, Y_train, X_val, Y_val, error_function, epoche_number=0, eta_minus=0.5, eta_plus=1.2, delta_zero=0.0125, delta_min=0.00001, delta_max=1):
     Z_train = forward_propagation(net, X_train)
     err_train = error_function(Z_train, Y_train)
     Z_val = forward_propagation(net, X_val)
     error_val = error_function(Z_val, Y_val)
-    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
-
-    eta_plus = 1.2
-    eta_minus = 0.5
-    delta_zero = 0.0125
-    delta_min = 0.00001
-    delta_max = 1
+    print("Epoca: ", -1, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
+          get_accuracy_network(Z_val, Y_val))
 
     der_list = []
 
@@ -230,18 +239,17 @@ def resilient_train_rpropplus(net, X_train, Y_train, X_val, Y_val, error_functio
         der_list.append(backpropagation(net, X_train, Y_train, error_function))
         for layer in range(0, net["Depth"]):
             if epoca == 0:
-                delta_wij[epoca][layer] = np.where(der_list[epoca][layer] > 0, - delta_ij[epoca][layer],
-                                            np.where(der_list[epoca][layer] < 0, delta_ij[epoca][layer], 0))
+                delta_wij[epoca][layer] = np.where(der_list[epoca][layer] > 0, - delta_ij[epoca][layer], np.where(der_list[epoca][layer] < 0, delta_ij[epoca][layer], 0))
 
                 net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
 
             if epoca > 0:
-                prod_der = der_list[epoca-1][layer] * der_list[epoca][layer]
+                prod_der = der_list[epoca - 1][layer] * der_list[epoca][layer]
 
                 delta_ij[epoca][layer] = np.where(prod_der > 0, np.minimum(delta_ij[epoca - 1][layer] * eta_plus, delta_max),
-                                            np.where(prod_der < 0, np.maximum(delta_ij[epoca - 1][layer] * eta_minus, delta_min), delta_ij[epoca-1][layer]))
+                                                  np.where(prod_der < 0, np.maximum(delta_ij[epoca - 1][layer] * eta_minus, delta_min), delta_ij[epoca - 1][layer]))
 
-                delta_wij[epoca][layer] = np.where(prod_der >= 0, - ((np.sign(der_list[epoca][layer])) * delta_ij[epoca][layer]), - delta_wij[epoca-1][layer])
+                delta_wij[epoca][layer] = np.where(prod_der >= 0, - ((np.sign(der_list[epoca][layer])) * delta_ij[epoca][layer]), - delta_wij[epoca - 1][layer])
 
                 net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
 
@@ -253,6 +261,7 @@ def resilient_train_rpropplus(net, X_train, Y_train, X_val, Y_val, error_functio
         Z_val = forward_propagation(net, X_val)
         error_val = error_function(Z_val, Y_val)
 
-        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
+        print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
+              get_accuracy_network(Z_val, Y_val))
 
         epoca += 1
