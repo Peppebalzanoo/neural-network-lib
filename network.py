@@ -169,8 +169,10 @@ def backpropagation_train(net, X_train, Y_train, X_val, Y_val, error_function, e
         error_val = error_function(Z_val, Y_val)
 
         if epoca == epoche_number - 1:
-            print("Epoca: ", epoca, "Train error: ", err_train, "Accuracy Train: ", get_accuracy_network(Z_train, Y_train), "Validation error: ", error_val, "Accuracy Validation: ",
-                  get_accuracy_network(Z_val, Y_val))
+            print("Epoca: ", epoca, "Train error: ", err_train,
+                  "Accuracy Train: ", get_accuracy_network(Z_train, Y_train),
+                  "Validation error: ", error_val,
+                  "Accuracy Validation: ", get_accuracy_network(Z_val, Y_val))
 
         epoca += 1
 
